@@ -39,49 +39,78 @@
 
   <!-- make the plot here -->
   <script>
-  var margin = {top: 20, right: 20, bottom: 20, left: 20},
-    width = 400 - margin.left - margin.right,
-    height = 200 - margin.top - margin.bottom;
 
-  var x = d3.scale.linear()
-    .range([0, width]);
+  // Parse the CSV file, figure out the size of the dataset,
+  // then create the plot
 
-  var y = d3.scale.linear()
-    .range([height, 0]);
+  // Read the file, discover the header, then add sample number.
+  d3.text("mc.csv", function(text) { // callback function
 
-  var xAxis = d3.svg.axis()
-    .scale(x)
-    .orient("bottom");
+      // First, determine the number of columns and the column headers
+      var rows = d3.csv.parseRows(text);
 
-  var yAxis = d3.svg.axis()
-    .scale(y)
-    .orient("left");
+      var header = rows.shift()
+      var nparam = header.length;
+      var niter = rows.length;
 
-  var line = d3.svg.line()
-    .x(function(d) {return x(d.wl) })
-    .y(function(d) {return y(d.fl) });
+      console.log("nparam", nparam);
+      console.log("niter", niter);
 
-  // Define "conventional margins" http://bl.ocks.org/mbostock/3019563
-  var svg = d3.select("body").append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      console.log("header", header);
 
-  // Parse the CSV file and add it to the plot
-  d3.csv("img/spectrum.csv")
-    .row(function(d) { return {fl: +d.fl, wl: +d.wl}; }) // Accessor function
-    .get(function(error, rows) { // callback function
-      // because the CSV is lazy-loaded, everything should happen within
-      // this callback
 
-      x.domain(d3.extent(rows, function(d) {return d.wl; }));
-      y.domain(d3.extent(rows, function(d) {return d.fl; }));
+      // Before making a multi-plot, let's make just a single.
+      var iters = d3.range(niter);
+
+      var a = new Array(niter);
+
+      // Loop over all iterations and read the values into this array
+      var i;
+      for(i = 0; i < niter ; i++)
+        a[i] = rows[i][0];
+
+      var dd = d3.zip(iters, a);
+      console.log("data", dd);
+
+      // Define the plot based off of how many parameters we have
+      var margin = {top: 20, right: 20, bottom: 20, left: 20},
+        width = 900 - margin.left - margin.right,
+        height = 150 * nparam - margin.top - margin.bottom;
+
+      var x = d3.scale.linear()
+        .range([0, width]);
+
+      var y = d3.scale.linear()
+        .range([height, 0]);
+
+      var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+      var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left");
+
+      var line = d3.svg.line()
+        .x(function(d) {return x(d[0]) })
+        .y(function(d) {return y(d[1]) });
+
+      // Define "conventional margins" http://bl.ocks.org/mbostock/3019563
+      var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+      x.domain(d3.extent(dd, function(d) {return d[0]; }));
+      y.domain(d3.extent(dd, function(d) {return d[1]; }));
+
+      console.log(rows);
 
       svg.append("path")
         .attr("class", "line")
-        .attr("d", line(rows));
-      // console.log(rows);
+        .attr("d", line(dd));
 
       });
 
