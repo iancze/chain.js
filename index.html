@@ -53,20 +53,11 @@
       var nparam = header.length;
       var niter = rows.length;
 
-      console.log("nparam", nparam);
-      console.log("niter", niter);
-      console.log("header", header);
-
       // Transpose the rows to make (nparam, niter) shape array
       rows = d3.transpose(rows);
 
       // Now, we must parse to make sure all values are floats
       rows = numeric.parseFloat(rows);
-      // for(var i=0; i < nparam; i++){
-      //   for(var j=0; j < niter; j++){
-      //     rows[i][j] = parseFloat(rows[i][j]);
-      //   }
-      // }
 
       // Before making a multi-plot, let's make just a single.
       var iters = d3.range(niter);
@@ -108,7 +99,6 @@
       }
 
       // Define "conventional margins" http://bl.ocks.org/mbostock/3019563
-      // for some reason, conventional margins didn't work properly.
       var svg = d3.select("body").append("svg")
           .attr("width", width + margin.left + margin.right)
           .attr("height", height + margin.top + margin.bottom)
