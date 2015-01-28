@@ -1,10 +1,10 @@
 # chain.js
-Quick and easy web plots of MCMC samples
+Quick and easy web plots of MCMC samples: [Website](http://iancze.github.io/chain.js/)
 
-Got some long-running MCMC chains on the cluster? Would you like to periodically check up on them? Write the samples to a CSV file and use your browser to check up on the progress.
+Do you frequently run long MCMC chains on a cluster? Would you like to periodically check up on their progress?
 
-Input: 2D array in CSV file (easy to append), with parameters as headers. File has `nparam` columns and `nsamples` rows.
+Using *chain.js*, you can use your browser to watch your MCMC algorithm sample in realtime.
 
-Output: a plot with one column and `nparam` rows, displaying parameter value as a function of MCMC iteration.
+Simply modify your MCMC code to append your parameters to a CSV file and use the browser to plot them.
 
-For an example of how to set up your MCMC code to use `chain.js`, see `make_samples.py`.
+For an example of how to modify your MCMC code to use `chain.js`, see `make_samples.py`.
