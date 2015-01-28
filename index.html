@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+
+  <title>Markov Chain samples</title>
+
+  <style>
+
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: black;
+    stroke-width: 2px;
+    opacity: 0.8;
+    shape-rendering: crispEdges;
+  }
+
+  .axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+  }
+
+  .line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 1.5px;
+  }
+
+</style>
+</head>
+
+
+<body>
+
+  <script src="d3.min.js"></script>
+  <script src="numeric-1.2.6.min.js"></script>
+
+  <!-- make the plot here -->
+  <script>
+
+  // Parse the CSV file, figure out the size of the dataset,
+  // then create the plot
+
+  // Read the file, discover the header, then add sample number.
+  d3.text("mc.csv", function(text) { // callback function
+
+      // First, determine the number of columns and the column headers
+      var rows = d3.csv.parseRows(text);
+
+      var header = rows.shift()
+      var nparam = header.length;
+      var niter = rows.length;
+
+      console.log("nparam", nparam);
+      console.log("niter", niter);
+      console.log("header", header);
+
+      // Transpose the rows to make (nparam, niter) shape array
+      rows = d3.transpose(rows);
+
+      // Now, we must parse to make sure all values are floats
+      rows = numeric.parseFloat(rows);
+      // for(var i=0; i < nparam; i++){
+      //   for(var j=0; j < niter; j++){
+      //     rows[i][j] = parseFloat(rows[i][j]);
+      //   }
+      // }
+
+      // Before making a multi-plot, let's make just a single.
+      var iters = d3.range(niter);
+
+      var hh = 150; // pixel height of each plot, including margin
+
+      // Define the plot based off of how many parameters we have
+      var margin = {top: 20, right: 20, bottom: 20, left: 60},
+        width = 1100 - margin.left - margin.right,
+        height = hh * nparam //- margin.top - margin.bottom;
+
+      var x = d3.scale.linear()
+        .range([0, width]);
+
+      var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+      var yy = new Array(nparam); // array to hold the y scale objects
+      var yAxes = new Array(nparam); // array to hold the yAxis objects
+      var lines = new Array(nparam); // array to hold the line objects
+
+      var hspace = 8; // space between plots
+
+      for(var i=0; i < nparam; i++){
+        yy[i] = d3.scale.linear()
+          .range([hh * (i + 1) - hspace, hh * i + hspace])
+          .domain(d3.extent(rows[i], function(d) {return d; } ));
+
+        // console.log("plot", i, "bottom", hh * (i + 1), "top", hh * i)
+
+        yAxes[i] = d3.svg.axis()
+            .scale(yy[i])
+            .orient("left");
+
+        lines[i] = d3.svg.line()
+          .x(function(d, j) {return x(iters[j]) })
+          .y(function(d) {return yy[i](d) });
+      }
+
+      // Define "conventional margins" http://bl.ocks.org/mbostock/3019563
+      // for some reason, conventional margins didn't work properly.
+      var svg = d3.select("body").append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      x.domain(d3.extent(iters, function(d) {return d; }));
+
+      // set the domains and add the paths
+      for(var i=0; i < nparam; i++){
+
+        svg.append("path")
+          .attr("class", "line")
+          .attr("d", lines[i](rows[i]));
+
+        svg.append("g")
+          .attr("class", "axis")
+          .call(yAxes[i]);
+
+        // yAxis label
+        svg.append("g")
+          .attr("class", "axis")
+          .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 0 - margin.left)
+          .attr("x",0 - hh * (i + 0.5))
+          .attr("dy", "1em")
+          .style("text-anchor", "middle")
+          .text(header[i]);
+      }
+
+      svg.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis);
+
+      });
+
+  </script>
+
+
+</body>
+
+</html>
