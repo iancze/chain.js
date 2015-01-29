@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+
+  <title>imshow a matrix</title>
+
+  <style>
+
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: black;
+    stroke-width: 2px;
+    opacity: 0.8;
+    shape-rendering: crispEdges;
+  }
+
+  .axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+  }
+
+  .line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 1.5px;
+  }
+
+  </style>
+</head>
+
+
+<body>
+
+  <script src="d3.min.js"></script>
+  <script src="numeric-1.2.6.min.js"></script>
+
+  <!-- make the plot here -->
+  <script>
+
+  // Make a random matrix
+  var n = 100.;
+  // var data = numeric.random([n, n]);
+  // console.log("data", data);
+
+  // Flatten the array. Row-major order
+  // var dd = [];
+  // dd = dd.concat.apply(dd, data);
+
+  // Map the GP kernel between indices
+  var k = function(i,j){
+    return Math.exp(-0.1 * (i - j)*(i-j));
+  }
+
+  var inds = new Array(n*n);
+  var dd = new Array(n*n);
+  // create an array of row,col indices
+  for(var i=0; i<n; i++){
+    for(var j=0; j<n; j++){
+      inds[i*n + j] = [i,j];
+      dd[i*n + j] = k(i,j);
+    }
+  }
+
+  var w = 500., h = 500;
+
+  var pix = w/n; // The size of each pixel
+
+  var color = d3.scale.linear()
+    .domain(d3.extent(dd))
+    .range(["white", "black"]);
+
+  var svg = d3.select("body").append("svg")
+    .attr("width", w)
+    .attr("height", h);
+
+  svg.selectAll("rect")
+    .data(dd)
+      .enter().append("rect")
+      // .attr("transform", translate)
+      .attr("width", pix)
+      .attr("height", pix)
+      .attr("x", function(d, i) {return inds[i][0]*pix; })
+      .attr("y", function(d, i) {return inds[i][1]*pix; })
+      .style("fill", function(d) { return color(d);});
+
+
+  </script>
+
+
+</body>
+
+</html>
