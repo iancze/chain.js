@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+
+  <title>Histograms</title>
+
+  <style>
+
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: black;
+    stroke-width: 2px;
+    opacity: 0.8;
+    shape-rendering: crispEdges;
+  }
+
+  .axis text {
+    font-family: sans-serif;
+    font-size: 11px;
+  }
+
+  .line {
+    fill: none;
+    stroke: steelblue;
+    stroke-width: 1.5px;
+  }
+
+  .bar rect {
+    fill: steelblue;
+    shape-rendering: crispEdges;
+  }
+
+  .bar text {
+    fill: #fff;
+  }
+
+  text.label {
+    font-family: sans-serif;
+    font-size: 11px;
+  }
+
+  </style>
+</head>
+
+
+<body>
+
+  <script src="d3.min.js"></script>
+  <script src="numeric-1.2.6.min.js"></script>
+
+  <!-- make the plot here -->
+  <script>
+
+  d3.text("mc.csv", function(text) { // callback function
+
+    // First, determine the number of columns and the column headers
+    var rows = d3.csv.parseRows(text);
+
+    var header = rows.shift()
+    var nparam = header.length;
+    var niter = rows.length;
+
+    // Transpose the rows to make (nparam, niter) shape array
+    rows = d3.transpose(rows);
+
+    // Now, we must parse to make sure all values are floats
+    rows = numeric.parseFloat(rows);
+
+    var nbins = 12;
+    var formatMean = d3.format(",.3f");
+
+    var row = rows[0];
+    // Before making a multi-plot, let's make just a single.
+
+    // Define the plot based off of how many parameters we have
+    var margin = {top: 20, right: 20, bottom: 20, left: 60},
+    width = 200 - margin.left - margin.right,
+    height = 200 - margin.top - margin.bottom
+
+    // rows[i] delivers a 1D array of the chain.
+    var x = d3.scale.linear()
+      .domain(d3.extent(row))
+      .range([0, width]);
+
+    var data = d3.layout.histogram()
+      .bins(nbins)
+      (row);
+
+    var y = d3.scale.linear()
+      .domain([0, d3.max(data, function(d) { return d.y; })])
+      .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+      .scale(x)
+      .ticks(5)
+      .orient("bottom");
+
+    // Define "conventional margins" http://bl.ocks.org/mbostock/3019563
+    var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var bar = svg.selectAll(".bar")
+        .data(data)
+      .enter().append("g")
+        .attr("class", "bar")
+        .attr("transform", function(d) { return "translate(" + x(d.x) + "," + y(d.y) + ")"; });
+
+    // The 1 here is for the 1 pixel gaps between bars
+    var space = 1; // pixels
+    bar.append("rect")
+      .attr("x", space)
+      .attr("width", width/nbins - space)
+      .attr("height", function(d) { return height - y(d.y); });
+
+    svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+    // Let's annotate the histogram with a mean and standard deviation estimate
+    svg.append("text")
+      .attr("class", "label")
+      .attr("y", 6)
+      .attr("x", 6)
+      .attr("text-anchor", "middle")
+      .text(function(d) { return formatMean(d3.mean(row)) + "±" +  formatMean(d3.deviation(row));});
+
+  });
+
+  </script>
+
+
+</body>
+
+</html>

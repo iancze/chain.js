@@ -28,6 +28,16 @@
     stroke-width: 1.5px;
   }
 
+  .bar rect {
+    fill: steelblue;
+    shape-rendering: crispEdges;
+  }
+
+  text.label {
+    font-family: sans-serif;
+    font-size: 11px;
+  }
+
 </style>
 </head>
 
@@ -65,12 +75,16 @@
       var hh = 150; // pixel height of each plot, including margin
 
       // Define the plot based off of how many parameters we have
-      var margin = {top: 20, right: 20, bottom: 20, left: 60},
+      var margin = {top: 20, right: 20, bottom: 20, left: 60, wspace: 70},
         width = 1100 - margin.left - margin.right,
         height = hh * nparam //- margin.top - margin.bottom;
 
+      // histogram width
+      var hwidth = 250;
+      var hheight = hh;
+
       var x = d3.scale.linear()
-        .range([0, width]);
+        .range([hwidth, width]);
 
       var xAxis = d3.svg.axis()
         .scale(x)
@@ -116,6 +130,7 @@
 
         svg.append("g")
           .attr("class", "axis")
+          .attr("transform", "translate(" + hwidth + ",0)")
           .call(yAxes[i]);
 
         // yAxis label
@@ -123,7 +138,7 @@
           .attr("class", "axis")
           .append("text")
           .attr("transform", "rotate(-90)")
-          .attr("y", 0 - margin.left)
+          .attr("y", hwidth - margin.left)
           .attr("x",0 - hh * (i + 0.5))
           .attr("dy", "1em")
           .style("text-anchor", "middle")
@@ -134,6 +149,88 @@
         .attr("class", "axis")
         .attr("transform", "translate(0," + height + ")")
         .call(xAxis);
+
+      // HISTOGRAM starts here
+
+      var nbins = 12;
+      var formatMean = d3.format(",.3f");
+
+
+      // Add entirely new variables for the histograms
+      var Hdata = new Array(nparam); // holding the data
+      var Hxx = new Array(nparam); //x scale objects
+      var Hy = new Array(nparam);
+      var Hyy = new Array(nparam); //y scale objects
+      var Hxaxes = new Array(nparam); //xAxis objects
+
+      for(var i=0; i < nparam; i++){
+
+        var row = rows[i];
+
+        Hdata[i] = d3.layout.histogram()
+          .bins(nbins)
+          (row);
+
+        Hxx[i] = d3.scale.linear()
+          .domain(d3.extent(row))
+          .range([0, hwidth - margin.wspace]);
+
+        //Where to position within the subplot
+        Hy[i] = d3.scale.linear()
+          .domain([0, d3.max(Hdata[i], function(d) { return d.y; })])
+          .range([hheight, 0 + 25]);
+
+        //Where to position in the actual full plot
+        Hyy[i] = d3.scale.linear()
+          .domain([0, d3.max(Hdata[i], function(d) { return d.y; })])
+          .range([hh * (i + 1) - hspace, hh * i + hspace]);
+
+        Hxaxes[i] = d3.svg.axis()
+          .scale(Hxx[i])
+          .ticks(5)
+          .orient("bottom");
+
+        svg.append("g")
+          .attr("class", "x axis")
+          .attr("transform", "translate(0," + (1 + hheight * (i + 1)) + ")")
+          .call(Hxaxes[i]);
+
+        // Let's annotate the histogram with a mean and standard deviation estimate
+        svg.append("text")
+          .attr("class", "label")
+          .attr("y", 35 + hh * i + hspace)
+          .attr("x", 6)
+          .attr("text-anchor", "middle")
+          .text(function(d) { return formatMean(d3.mean(row)) + "±" +  formatMean(d3.deviation(row));});
+      }
+
+      var hist = svg.selectAll(".hist")
+          .data(Hdata)
+        .enter().append("g")
+          .attr("class", "hist")
+          .attr("transform", function(d, j) { return "translate(0," + hheight * j + ")"; });
+
+
+      var space = 1; // pixels
+      //I know this isn't the most D3-esque solution, but since we have a
+      //nested histogram I can't think of another way.
+      //Traverse all of the hist selections in order so that we can keep a
+      //row index to query the axes
+
+      hist.each(function(d, i){
+
+        var bar = d3.select(this).selectAll(".bar")
+            .data(d)
+          .enter().append("g")
+            .attr("class", "bar")
+            .attr("transform", function(e) { return "translate(" + Hxx[i](e.x) + "," + Hy[i](e.y) + ")"; });
+
+        bar.append("rect")
+          .attr("x", space)
+          .attr("width", (hwidth - margin.wspace)/nbins - space)
+          .attr("height", function(e) { return hheight - Hy[i](e.y); });
+
+        });
 
       });
 
